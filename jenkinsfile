@@ -3,29 +3,53 @@ pipeline {
 
  
 
-    environment {
-        PATH = "C:\\Windows\\System32;C:\\Users\\Gabri\\AppData\\Local\\Programs\\Python\\Python39;C:\\Program Files\\Docker\\Docker\\resources\\bin"
-    }
+    stages {
+        stage('StageBranch') {
+            steps {
+                //sh "git branch staging"
+                sh "git checkout staging"
+                sh "git pull origin dev"
+                sh "git push origin staging"
+            }
+        }
+        stage('Build') {
+            steps {
+                sh "pip3 install -r requirements.txt"
+            }
+        }
+        stage('Test') {
+            steps {
+                sh "python3 test_main.py "
+            }
+        }
+        stage('DockerBuild') {
+            steps {
+                sh "docker build -t jenkins-tp ."
+            }
+        }
+        /*stage('DockerRun') {
+            steps {
+                sh "docker run -d jenkins-tp"
+            }
+        }*/
+
+        stage('DockerPush') {
+            steps{
+                sh "docker login --username=bengbff --password=MMA3zxbhwiv7q10!"
+                sh "docker tag jenkins-tp bengbff/jenkinstest:jenkins-tp"
+                sh "docker push bengbff/jenkinstest:jenkins-tp"
+            }
+        }
 
  
 
-    stages {
-        stage('Building') {
-            steps {
-                git branch: 'main', url: 'https://github.com/BenGbff/TP3_MLOPS.git'
-            }
-        }
-        stage('Testing') {
-            steps {
-                bat 'python -m pip install Flask'
-                bat 'python test_main.py'
-            }
-        }
-        stage('Deploying') {
-            steps {
-                bat 'docker build -t jenkins_app .'
-                bat 'docker run -d jenkins_app'
+        stage('MergeToMain') {
+            steps{
+                sh "git branch"
+                sh "git checkout master"
+                sh "git pull -f origin master"
+                sh "git push -f origin staging:master"
             }
         }
     }
-} 
+}
